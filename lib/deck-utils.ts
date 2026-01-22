@@ -31,3 +31,4 @@ export function getDeckStats(mainDeck: Card[], extraDeck: Card[]) {
 export function countCardCopies(cards: Card[], cardName: string) {
   return cards.filter(card => card.name === cardName).length;
 }
+

@@ -25,6 +25,7 @@ export function CardSearch() {
     attribute: 'all',
     level: 'all',
     race: 'all',
+    sort: 'name', // Adicionando opção de ordenação
   });
   
   // Busca inicial quando o componente montar
@@ -76,6 +77,11 @@ export function CardSearch() {
       
       if (filters.race !== 'all') {
         url += `&race=${encodeURIComponent(filters.race)}`;
+      }
+      
+      // Adicionar ordenação
+      if (filters.sort === 'new') {
+        url += `&sort=new`;
       }
       
       const response = await fetch(url);
@@ -222,6 +228,8 @@ export function CardSearch() {
                 </SelectContent>
               </Select>
             </div>
+            
+            {/* Removemos o seletor de ordenação daqui */}
           </div>
         </form>
       </div>
@@ -233,8 +241,29 @@ export function CardSearch() {
       ) : cards.length > 0 ? (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              {totalCards} cartas encontradas
+            <div className="flex items-center gap-6">
+              <div className="text-sm text-muted-foreground">
+                {totalCards} cartas encontradas
+              </div>
+
+                    
+              
+              {/* Adicionamos o seletor de ordenação aqui */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Ordenar por:</span>
+                <Select
+                  value={filters.sort}
+                  onValueChange={(value) => handleFilterChange('sort', value)}
+                >
+                  <SelectTrigger className="h-8 w-[140px]">
+                    <SelectValue placeholder="Ordenar por" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name">Nome</SelectItem>
+                    <SelectItem value="new">Mais Recentes</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             <div className="flex items-center gap-2">

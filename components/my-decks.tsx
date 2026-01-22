@@ -33,6 +33,7 @@ export function MyDecks() {
   const [importDeckName, setImportDeckName] = useState('');
   const [importMode, setImportMode] = useState<'text' | 'id'>('text');
   const [deckToDelete, setDeckToDelete] = useState<SavedDeck | null>(null);
+  const [deckToDuplicate, setDeckToDuplicate] = useState<SavedDeck | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -81,17 +82,30 @@ export function MyDecks() {
   };
 
   const duplicateDeck = (deck: SavedDeck) => {
-    const newDeck = {
-      ...deck,
-      id: Date.now().toString(),
-      name: `${deck.name} (Cópia)`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    
-    const updatedDecks = [...decks, newDeck];
-    localStorage.setItem('yugioh_decks', JSON.stringify(updatedDecks));
-    setDecks(updatedDecks);
+    setDeckToDuplicate(deck);
+  };
+
+  const confirmDuplicate = () => {
+    if (deckToDuplicate) {
+      const newDeck = {
+        ...deckToDuplicate,
+        id: Date.now().toString(),
+        name: `${deckToDuplicate.name} (Cópia)`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      
+      const updatedDecks = [...decks, newDeck];
+      localStorage.setItem('yugioh_decks', JSON.stringify(updatedDecks));
+      setDecks(updatedDecks);
+      
+      toast({
+        title: "Deck Duplicado",
+        description: `O deck "${deckToDuplicate.name}" foi duplicado com sucesso.`,
+      });
+      
+      setDeckToDuplicate(null);
+    }
   };
 
   const handleImportDeck = async () => {
@@ -524,6 +538,28 @@ export function MyDecks() {
                   onClick={confirmDelete}
                 >
                   Excluir
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          {/* Duplicate Confirmation Dialog */}
+          <Dialog open={!!deckToDuplicate} onOpenChange={(open) => !open && setDeckToDuplicate(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Duplicar Deck</DialogTitle>
+                <DialogDescription>
+                  Deseja criar uma cópia do deck &quot;{deckToDuplicate?.name}&quot;?
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDeckToDuplicate(null)}>
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={confirmDuplicate}
+                >
+                  Duplicar
                 </Button>
               </DialogFooter>
             </DialogContent>

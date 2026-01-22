@@ -57,16 +57,18 @@ export function DeckBuilder() {
   const [selectedThumbnail, setSelectedThumbnail] = useState<string>('');
   const [savedDecks, setSavedDecks] = useState<SavedDeck[]>([]);
   const [selectedDeckId, setSelectedDeckId] = useState<string>('');
+  const [decksLoaded, setDecksLoaded] = useState(false); // Novo estado para controlar se os decks foram carregados
 
   useEffect(() => {
     loadBanlist();
     loadSavedDecks();
   }, []);
 
+  // Modificar este useEffect para depender de decksLoaded
   useEffect(() => {
-    if (deckId && deckId !== 'new') {
+    if (decksLoaded && deckId && deckId !== 'new') {
       loadDeck(deckId);
-    } else {
+    } else if (decksLoaded) {
       // Reset to new deck state
       setDeckName('');
       setDeckDescription('');
@@ -75,7 +77,7 @@ export function DeckBuilder() {
       setExtraDeck([]);
       setSelectedDeckId('');
     }
-  }, [deckId]);
+  }, [deckId, decksLoaded]);
 
   useEffect(() => {
     searchCards();
@@ -129,8 +131,10 @@ export function DeckBuilder() {
     try {
       const decks = JSON.parse(localStorage.getItem('yugioh_decks') || '[]');
       setSavedDecks(decks);
+      setDecksLoaded(true); // Marcar que os decks foram carregados
     } catch (error) {
       console.error('Error loading saved decks:', error);
+      setDecksLoaded(true); // Mesmo em caso de erro, marcar como carregado
     }
   };
 
@@ -147,6 +151,13 @@ export function DeckBuilder() {
       
       setMainDeck(mainCards);
       setExtraDeck(extraCards);
+    } else {
+      // Se o deck não for encontrado, exibir uma mensagem
+      toast({
+        variant: "destructive",
+        title: "Deck não encontrado",
+        description: "O deck que você está tentando editar não foi encontrado.",
+      });
     }
   };
 
@@ -365,7 +376,7 @@ export function DeckBuilder() {
     });
 
     // Redirect to my-decks page after saving
-    window.location.href = '/my-decks/';
+    //window.location.href = '/my-decks/';
   };
 
   const clearDeck = () => {
@@ -445,15 +456,7 @@ export function DeckBuilder() {
                 required
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Descrição *</label>
-              <Input
-                value={deckDescription}
-                onChange={(e) => setDeckDescription(e.target.value)}
-                placeholder="Descrição do seu deck..."
-                required
-              />
-            </div>
+   
             <div className="space-y-2">
               <label className="text-sm font-medium">Thumbnail do Deck *</label>
               <Select
@@ -589,9 +592,147 @@ export function DeckBuilder() {
             </TabsContent>
           </Tabs>
         </div>
+
+            {/* Deck panel */}
+        <div className="lg:col-span-6 rounded-lg border bg-card p-4">
+          <Tabs defaultValue="main">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="main">Main Deck ({mainDeck.length})</TabsTrigger>
+              <TabsTrigger value="extra">Extra Deck ({extraDeck.length})</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="main">
+             {mainDeck.length > 0 ? (
+  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-10 lg:grid-cols-10 gap-2">
+    {mainDeck.map((card, index) => (
+      <div
+        key={`main-${card.id}-${index}`}
+        className="relative cursor-pointer border rounded overflow-hidden transition-all hover:ring-2 hover:ring-primary"
+        onClick={() => setSelectedCard(card)}
+        onDoubleClick={() => removeCardFromDeck(card, true)}
+      >
+        <div className="aspect-[3/4.4] relative">
+          <Image
+            src={card.card_images[0].image_url_small || card.card_images[0].image_url}
+            alt={card.name}
+            fill
+            sizes="(max-width: 768px) 25vw, 16vw"
+            className="object-cover"
+          />
+        </div>
+        <div className="p-1 bg-background/80 backdrop-blur-sm">
+          <p className="text-xs truncate" title={card.name}>
+            {card.name}
+          </p>
+        </div>
+      </div>
+    ))}
+
+  </div>
+
+) : (
+  <div className="flex flex-col items-center justify-center py-8">
+    <p className="text-muted-foreground text-center">
+      Seu main deck está vazio. Adicione cartas a partir da busca.
+    </p>
+  </div>
+)}
+
+<div>
+{/* testando */}
+{extraDeck.length > 0 ? (
+                <div className="space-y-4">
+                 
+                    <div  className="space-y-2">
+                   
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-10 lg:grid-cols-10 gap-2">
+                      {extraDeck.map((card, index) => (
+      <div
+        key={`main-${card.id}-${index}`}
+        className="relative cursor-pointer border rounded overflow-hidden transition-all hover:ring-2 hover:ring-primary"
+        onClick={() => setSelectedCard(card)}
+        onDoubleClick={() => removeCardFromDeck(card, true)}
+      >
+        <div className="aspect-[3/4.4] relative">
+          <Image
+            src={card.card_images[0].image_url_small || card.card_images[0].image_url}
+            alt={card.name}
+            fill
+            sizes="(max-width: 768px) 25vw, 16vw"
+            className="object-cover"
+          />
+        </div>
+        <div className="p-1 bg-background/80 backdrop-blur-sm">
+          <p className="text-xs truncate" title={card.name}>
+            {card.name}
+          </p>
+        </div>
+      </div>
+    ))}
+                      </div>
+                    </div>
+                
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <p className="text-muted-foreground text-center">
+                    Seu extra deck está vazio. Adicione cartas a partir da busca.
+                  </p>
+                </div>
+              )}
+</div>
+{/* testando */}
+            </TabsContent>
+            
+            <TabsContent value="extra">
+              {extraDeck.length > 0 ? (
+                <div className="space-y-4">
+                  {Object.entries(groupCardsByType(extraDeck)).map(([type, cards]) => (
+                    <div key={type} className="space-y-2">
+                      <h4 className="font-medium text-sm text-muted-foreground">
+                        {type} ({cards.length})
+                      </h4>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {cards.map((card, index) => (
+                          <div
+                            key={`extra-${card.id}-${index}`}
+                            className="relative cursor-pointer border rounded overflow-hidden transition-all hover:ring-2 hover:ring-primary"
+                            onClick={() => setSelectedCard(card)}
+                            onDoubleClick={() => removeCardFromDeck(card, false)}
+                          >
+                            <div className="aspect-[3/4.4] relative">
+                              <Image
+                                src={card.card_images[0].image_url_small || card.card_images[0].image_url}
+                                alt={card.name}
+                                fill
+                                sizes="(max-width: 768px) 25vw, 16vw"
+                                className="object-cover"
+                              />
+                            </div>
+                            <div className="p-1 bg-background/80 backdrop-blur-sm">
+                              <p className="text-xs truncate" title={card.name}>
+                                {card.name}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <p className="text-muted-foreground text-center">
+                    Seu extra deck está vazio. Adicione cartas a partir da busca.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
         
         {/* Card search & pool panel */}
-        <div className="lg:col-span-6 rounded-lg border bg-card p-4">
+        <div className="lg:col-span-4 rounded-lg border bg-card p-4">
           <h2 className="text-xl font-semibold mb-3">Buscar Cartas</h2>
           
           <form onSubmit={handleSearch} className="space-y-4">
@@ -853,105 +994,7 @@ export function DeckBuilder() {
           )}
         </div>
         
-        {/* Deck panel */}
-        <div className="lg:col-span-4 rounded-lg border bg-card p-4">
-          <Tabs defaultValue="main">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="main">Main Deck ({mainDeck.length})</TabsTrigger>
-              <TabsTrigger value="extra">Extra Deck ({extraDeck.length})</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="main">
-              {mainDeck.length > 0 ? (
-                <div className="space-y-4">
-                  {Object.entries(groupCardsByType(mainDeck)).map(([type, cards]) => (
-                    <div key={type} className="space-y-2">
-                      <h4 className="font-medium text-sm text-muted-foreground">
-                        {type} ({cards.length})
-                      </h4>
-                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                        {cards.map((card, index) => (
-                          <div
-                            key={`main-${card.id}-${index}`}
-                            className="relative cursor-pointer border rounded overflow-hidden transition-all hover:ring-2 hover:ring-primary"
-                            onClick={() => setSelectedCard(card)}
-                            onDoubleClick={() => removeCardFromDeck(card, true)}
-                          >
-                            <div className="aspect-[3/4.4] relative">
-                              <Image
-                                src={card.card_images[0].image_url_small || card.card_images[0].image_url}
-                                alt={card.name}
-                                fill
-                                sizes="(max-width: 768px) 25vw, 16vw"
-                                className="object-cover"
-                              />
-                            </div>
-                            <div className="p-1 bg-background/80 backdrop-blur-sm">
-                              <p className="text-xs truncate" title={card.name}>
-                                {card.name}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <p className="text-muted-foreground text-center">
-                    Seu main deck está vazio. Adicione cartas a partir da busca.
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="extra">
-              {extraDeck.length > 0 ? (
-                <div className="space-y-4">
-                  {Object.entries(groupCardsByType(extraDeck)).map(([type, cards]) => (
-                    <div key={type} className="space-y-2">
-                      <h4 className="font-medium text-sm text-muted-foreground">
-                        {type} ({cards.length})
-                      </h4>
-                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                        {cards.map((card, index) => (
-                          <div
-                            key={`extra-${card.id}-${index}`}
-                            className="relative cursor-pointer border rounded overflow-hidden transition-all hover:ring-2 hover:ring-primary"
-                            onClick={() => setSelectedCard(card)}
-                            onDoubleClick={() => removeCardFromDeck(card, false)}
-                          >
-                            <div className="aspect-[3/4.4] relative">
-                              <Image
-                                src={card.card_images[0].image_url_small || card.card_images[0].image_url}
-                                alt={card.name}
-                                fill
-                                sizes="(max-width: 768px) 25vw, 16vw"
-                                className="object-cover"
-                              />
-                            </div>
-                            <div className="p-1 bg-background/80 backdrop-blur-sm">
-                              <p className="text-xs truncate" title={card.name}>
-                                {card.name}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <p className="text-muted-foreground text-center">
-                    Seu extra deck está vazio. Adicione cartas a partir da busca.
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
+    
       </div>
       <Toaster />
     </div>
